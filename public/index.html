@@ -1,0 +1,622 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Confluence to Markdown Converter</title>
+  <style>
+    :root {
+      --primary: #0052CC;
+      --primary-dark: #0747A6;
+      --success: #00875A;
+      --error: #DE350B;
+      --warning: #FF991F;
+      --bg: #FAFBFC;
+      --card: #FFFFFF;
+      --border: #DFE1E6;
+      --text: #172B4D;
+      --text-muted: #6B778C;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      padding: 2rem;
+    }
+
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 2rem;
+    }
+
+    header h1 {
+      font-size: 2rem;
+      margin-bottom: 0.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+    }
+
+    header p {
+      color: var(--text-muted);
+    }
+
+    .card {
+      background: var(--card);
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    }
+
+    .card h2 {
+      font-size: 1.1rem;
+      margin-bottom: 1rem;
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .form-group {
+      margin-bottom: 1rem;
+    }
+
+    label {
+      display: block;
+      font-weight: 500;
+      margin-bottom: 0.25rem;
+      font-size: 0.9rem;
+    }
+
+    .hint {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      margin-top: 0.25rem;
+    }
+
+    input, select, textarea {
+      width: 100%;
+      padding: 0.75rem;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      font-size: 1rem;
+      transition: border-color 0.2s;
+    }
+
+    input:focus, select:focus, textarea:focus {
+      outline: none;
+      border-color: var(--primary);
+    }
+
+    .toggle-group {
+      display: flex;
+      background: var(--bg);
+      border-radius: 4px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+    }
+
+    .toggle-btn {
+      flex: 1;
+      padding: 0.75rem;
+      border: none;
+      background: transparent;
+      cursor: pointer;
+      font-size: 0.9rem;
+      font-weight: 500;
+      transition: all 0.2s;
+    }
+
+    .toggle-btn.active {
+      background: var(--primary);
+      color: white;
+    }
+
+    .toggle-btn:hover:not(.active) {
+      background: var(--border);
+    }
+
+    .collapsible {
+      margin-top: 1rem;
+      border-top: 1px solid var(--border);
+      padding-top: 1rem;
+    }
+
+    .collapsible-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      cursor: pointer;
+      padding: 0.5rem 0;
+      user-select: none;
+    }
+
+    .collapsible-header h3 {
+      font-size: 0.95rem;
+      font-weight: 500;
+    }
+
+    .collapsible-content {
+      display: none;
+      padding-top: 1rem;
+    }
+
+    .collapsible-content.open {
+      display: block;
+    }
+
+    .chevron {
+      transition: transform 0.2s;
+    }
+
+    .chevron.open {
+      transform: rotate(180deg);
+    }
+
+    .row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+    }
+
+    @media (max-width: 600px) {
+      .row {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .checkbox-group {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .checkbox-group input {
+      width: auto;
+    }
+
+    button.primary {
+      width: 100%;
+      padding: 1rem;
+      background: var(--primary);
+      color: white;
+      border: none;
+      border-radius: 4px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    button.primary:hover {
+      background: var(--primary-dark);
+    }
+
+    button.primary:disabled {
+      background: var(--border);
+      cursor: not-allowed;
+    }
+
+    .alert {
+      padding: 1rem;
+      border-radius: 4px;
+      margin-bottom: 1rem;
+      display: none;
+    }
+
+    .alert.error {
+      background: #FFEBE6;
+      border: 1px solid var(--error);
+      color: var(--error);
+      display: block;
+    }
+
+    .alert.success {
+      background: #E3FCEF;
+      border: 1px solid var(--success);
+      color: var(--success);
+      display: block;
+    }
+
+    .result-card {
+      display: none;
+    }
+
+    .result-card.show {
+      display: block;
+    }
+
+    .result-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1rem;
+    }
+
+    .result-title {
+      font-weight: 600;
+    }
+
+    .result-actions {
+      display: flex;
+      gap: 0.5rem;
+    }
+
+    .result-actions button {
+      padding: 0.5rem 1rem;
+      border: 1px solid var(--border);
+      background: white;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 0.85rem;
+      transition: all 0.2s;
+    }
+
+    .result-actions button:hover {
+      background: var(--bg);
+    }
+
+    .result-actions button.download {
+      background: var(--success);
+      color: white;
+      border-color: var(--success);
+    }
+
+    .result-actions button.download:hover {
+      background: #006644;
+    }
+
+    .markdown-preview {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 1rem;
+      font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+      font-size: 0.85rem;
+      white-space: pre-wrap;
+      word-break: break-word;
+      max-height: 400px;
+      overflow-y: auto;
+    }
+
+    .loading {
+      display: none;
+      text-align: center;
+      padding: 2rem;
+    }
+
+    .loading.show {
+      display: block;
+    }
+
+    .spinner {
+      width: 40px;
+      height: 40px;
+      border: 3px solid var(--border);
+      border-top-color: var(--primary);
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin: 0 auto 1rem;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .default-badge {
+      display: inline-block;
+      background: var(--success);
+      color: white;
+      padding: 0.15rem 0.4rem;
+      border-radius: 3px;
+      font-size: 0.7rem;
+      font-weight: 600;
+      margin-left: 0.5rem;
+      vertical-align: middle;
+    }
+
+    footer {
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 0.85rem;
+      margin-top: 2rem;
+    }
+
+    footer a {
+      color: var(--primary);
+      text-decoration: none;
+    }
+
+    footer a:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>📄 Confluence to Markdown</h1>
+      <p>Convert any Confluence page to clean Markdown</p>
+    </header>
+
+    <div id="alert" class="alert"></div>
+
+    <div class="card">
+      <h2>📝 Page Details</h2>
+      
+      <div class="form-group">
+        <label for="pageId">Page ID</label>
+        <input type="text" id="pageId" placeholder="e.g., 123456789 or 123456" />
+        <p class="hint">Find this in the page URL or page info</p>
+      </div>
+
+      <div class="form-group">
+        <label>Confluence Type</label>
+        <div class="toggle-group">
+          <button type="button" class="toggle-btn active" data-type="cloud">☁️ Cloud</button>
+          <button type="button" class="toggle-btn" data-type="datacenter">🏢 Data Center</button>
+        </div>
+      </div>
+
+      <div class="collapsible">
+        <div class="collapsible-header" id="credentialsToggle">
+          <h3>🔐 Credentials <span id="defaultBadge" class="default-badge" style="display:none">Default configured</span></h3>
+          <span class="chevron">▼</span>
+        </div>
+        <div class="collapsible-content" id="credentialsContent">
+          <p class="hint" style="margin-bottom: 1rem;">Leave empty to use server defaults, or enter your own credentials</p>
+          
+          <div class="form-group">
+            <label for="baseUrl">Base URL</label>
+            <input type="url" id="baseUrl" placeholder="https://yourcompany.atlassian.net" />
+          </div>
+
+          <!-- Cloud credentials -->
+          <div id="cloudCredentials">
+            <div class="row">
+              <div class="form-group">
+                <label for="email">Email</label>
+                <input type="email" id="email" placeholder="you@company.com" />
+              </div>
+              <div class="form-group">
+                <label for="apiToken">API Token</label>
+                <input type="password" id="apiToken" placeholder="Your API token" />
+              </div>
+            </div>
+          </div>
+
+          <!-- Data Center credentials -->
+          <div id="dcCredentials" style="display: none;">
+            <div class="form-group">
+              <label for="pat">Personal Access Token (recommended)</label>
+              <input type="password" id="pat" placeholder="Your PAT" />
+            </div>
+            <p class="hint" style="margin: 0.5rem 0;">— OR use basic auth —</p>
+            <div class="row">
+              <div class="form-group">
+                <label for="username">Username</label>
+                <input type="text" id="username" placeholder="Your username" />
+              </div>
+              <div class="form-group">
+                <label for="password">Password</label>
+                <input type="password" id="password" placeholder="Your password" />
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>⚙️ Options</h2>
+      <div class="checkbox-group">
+        <input type="checkbox" id="includeMetadata" checked />
+        <label for="includeMetadata">Include YAML frontmatter (title, source, version)</label>
+      </div>
+    </div>
+
+    <button type="button" class="primary" id="convertBtn">🔄 Convert to Markdown</button>
+
+    <div class="loading" id="loading">
+      <div class="spinner"></div>
+      <p>Fetching and converting...</p>
+    </div>
+
+    <div class="card result-card" id="resultCard">
+      <div class="result-header">
+        <span class="result-title" id="resultTitle">Converted Page</span>
+        <div class="result-actions">
+          <button type="button" id="copyBtn">📋 Copy</button>
+          <button type="button" id="downloadBtn" class="download">⬇️ Download</button>
+        </div>
+      </div>
+      <pre class="markdown-preview" id="markdownPreview"></pre>
+    </div>
+
+    <footer>
+      <p>Built for converting Confluence pages to Markdown</p>
+    </footer>
+  </div>
+
+  <script>
+    // State
+    let confluenceType = 'cloud';
+    let serverConfig = { cloud: {}, datacenter: {} };
+    let lastResult = null;
+
+    // Elements
+    const toggleBtns = document.querySelectorAll('.toggle-btn');
+    const cloudCreds = document.getElementById('cloudCredentials');
+    const dcCreds = document.getElementById('dcCredentials');
+    const credentialsToggle = document.getElementById('credentialsToggle');
+    const credentialsContent = document.getElementById('credentialsContent');
+    const chevron = credentialsToggle.querySelector('.chevron');
+    const convertBtn = document.getElementById('convertBtn');
+    const loading = document.getElementById('loading');
+    const resultCard = document.getElementById('resultCard');
+    const alert = document.getElementById('alert');
+    const defaultBadge = document.getElementById('defaultBadge');
+
+    // Load server config
+    async function loadConfig() {
+      try {
+        const res = await fetch('/api/config');
+        serverConfig = await res.json();
+        updateDefaultBadge();
+      } catch (e) {
+        console.error('Failed to load config:', e);
+      }
+    }
+
+    function updateDefaultBadge() {
+      const config = confluenceType === 'cloud' ? serverConfig.cloud : serverConfig.datacenter;
+      if (config.hasCredentials) {
+        defaultBadge.style.display = 'inline-block';
+        document.getElementById('baseUrl').placeholder = config.baseUrl || 'Using server default';
+      } else {
+        defaultBadge.style.display = 'none';
+      }
+    }
+
+    // Toggle confluence type
+    toggleBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        toggleBtns.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        confluenceType = btn.dataset.type;
+        
+        if (confluenceType === 'cloud') {
+          cloudCreds.style.display = 'block';
+          dcCreds.style.display = 'none';
+        } else {
+          cloudCreds.style.display = 'none';
+          dcCreds.style.display = 'block';
+        }
+        
+        updateDefaultBadge();
+      });
+    });
+
+    // Toggle credentials section
+    credentialsToggle.addEventListener('click', () => {
+      credentialsContent.classList.toggle('open');
+      chevron.classList.toggle('open');
+    });
+
+    // Show alert
+    function showAlert(message, type) {
+      alert.textContent = message;
+      alert.className = `alert ${type}`;
+      setTimeout(() => {
+        alert.className = 'alert';
+      }, 5000);
+    }
+
+    // Convert
+    convertBtn.addEventListener('click', async () => {
+      const pageId = document.getElementById('pageId').value.trim();
+      
+      if (!pageId) {
+        showAlert('Please enter a page ID', 'error');
+        return;
+      }
+
+      const payload = {
+        pageId,
+        confluenceType,
+        baseUrl: document.getElementById('baseUrl').value.trim() || undefined,
+        includeMetadata: document.getElementById('includeMetadata').checked
+      };
+
+      if (confluenceType === 'cloud') {
+        const email = document.getElementById('email').value.trim();
+        const apiToken = document.getElementById('apiToken').value.trim();
+        if (email) payload.email = email;
+        if (apiToken) payload.apiToken = apiToken;
+      } else {
+        const pat = document.getElementById('pat').value.trim();
+        const username = document.getElementById('username').value.trim();
+        const password = document.getElementById('password').value.trim();
+        if (pat) payload.pat = pat;
+        if (username) payload.username = username;
+        if (password) payload.password = password;
+      }
+
+      // Show loading
+      loading.classList.add('show');
+      resultCard.classList.remove('show');
+      convertBtn.disabled = true;
+
+      try {
+        const res = await fetch('/api/convert', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+
+        const data = await res.json();
+
+        if (!res.ok) {
+          throw new Error(data.error || 'Conversion failed');
+        }
+
+        lastResult = data;
+        
+        document.getElementById('resultTitle').textContent = data.title;
+        document.getElementById('markdownPreview').textContent = data.markdown;
+        resultCard.classList.add('show');
+        
+        showAlert('Successfully converted!', 'success');
+      } catch (e) {
+        showAlert(e.message, 'error');
+      } finally {
+        loading.classList.remove('show');
+        convertBtn.disabled = false;
+      }
+    });
+
+    // Copy to clipboard
+    document.getElementById('copyBtn').addEventListener('click', () => {
+      if (lastResult) {
+        navigator.clipboard.writeText(lastResult.markdown).then(() => {
+          showAlert('Copied to clipboard!', 'success');
+        });
+      }
+    });
+
+    // Download
+    document.getElementById('downloadBtn').addEventListener('click', () => {
+      if (lastResult) {
+        const blob = new Blob([lastResult.markdown], { type: 'text/markdown' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = lastResult.filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      }
+    });
+
+    // Init
+    loadConfig();
+  </script>
+</body>
+</html>
