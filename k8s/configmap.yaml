@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: confluence-to-markdown-config
+  namespace: confluence-to-markdown
+  labels:
+    app.kubernetes.io/name: confluence-to-markdown
+data:
+  # Server configuration
+  PORT: "3000"
+  
+  # Default Confluence URLs (credentials go in Secret)
+  # Uncomment and set as needed:
+  # CONFLUENCE_CLOUD_BASE_URL: "https://yourcompany.atlassian.net"
+  # CONFLUENCE_DC_BASE_URL: "https://confluence.yourcompany.com"

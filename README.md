@@ -122,6 +122,70 @@ The converter handles common Confluence elements:
 - ✅ Bold, italic, underline
 - ✅ Status macros
 
+## Docker
+
+### Build locally
+
+```bash
+docker build -t confluence-to-markdown .
+docker run -p 3000:3000 confluence-to-markdown
+```
+
+### Use pre-built image
+
+```bash
+docker run -p 3000:3000 \
+  -e CONFLUENCE_CLOUD_BASE_URL=https://company.atlassian.net \
+  -e CONFLUENCE_CLOUD_EMAIL=you@company.com \
+  -e CONFLUENCE_CLOUD_API_TOKEN=your-token \
+  ghcr.io/yzeng1314/confluence-to-markdown:latest
+```
+
+## Kubernetes Deployment
+
+### Quick Start
+
+```bash
+# Apply all manifests
+kubectl apply -k k8s/
+
+# Or apply individually
+kubectl apply -f k8s/namespace.yaml
+kubectl apply -f k8s/configmap.yaml
+kubectl apply -f k8s/secret.yaml  # Edit with your credentials first
+kubectl apply -f k8s/deployment.yaml
+kubectl apply -f k8s/service.yaml
+kubectl apply -f k8s/ingress.yaml  # Edit hostname first
+kubectl apply -f k8s/hpa.yaml
+```
+
+### Configuration
+
+1. **Edit `k8s/secret.yaml`** with your Confluence credentials
+2. **Edit `k8s/configmap.yaml`** with default Confluence URLs
+3. **Edit `k8s/ingress.yaml`** with your domain name
+
+### Manifests Included
+
+| File | Description |
+|------|-------------|
+| `namespace.yaml` | Creates dedicated namespace |
+| `configmap.yaml` | Non-sensitive configuration |
+| `secret.yaml` | Confluence credentials (edit before applying) |
+| `deployment.yaml` | Pod deployment with health checks |
+| `service.yaml` | ClusterIP service |
+| `ingress.yaml` | Ingress rule (edit hostname) |
+| `hpa.yaml` | Horizontal Pod Autoscaler (2-10 replicas) |
+| `kustomization.yaml` | Kustomize configuration |
+
+## CI/CD
+
+GitHub Actions automatically:
+- Runs tests on every PR
+- Builds and pushes Docker image to `ghcr.io` on merge to `main`
+- Supports multi-arch builds (amd64, arm64)
+- Tags with: `latest`, branch name, commit SHA, semver (for tags)
+
 ## Development
 
 ```bash
