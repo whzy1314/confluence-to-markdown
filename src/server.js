@@ -90,11 +90,8 @@ app.post('/api/convert', async (req, res) => {
         return res.status(400).json({ error: 'Data Center Confluence requires baseUrl' });
       }
       
-      if (!config.pat && (!config.username || !config.password)) {
-        return res.status(400).json({ 
-          error: 'Data Center Confluence requires either PAT or username/password' 
-        });
-      }
+      // Allow anonymous access for public Confluence instances
+      // (no pat and no username/password is fine)
     }
 
     const result = await convertConfluenceToMarkdown(pageId, config);

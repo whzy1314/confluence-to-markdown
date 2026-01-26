@@ -150,13 +150,14 @@ async function fetchDataCenterPage(pageId, config) {
     'Accept': 'application/json'
   };
   
-  // Use PAT if available, otherwise basic auth
+  // Use PAT if available, otherwise basic auth, or anonymous for public instances
   if (config.pat) {
     headers['Authorization'] = `Bearer ${config.pat}`;
-  } else {
+  } else if (config.username && config.password) {
     const auth = Buffer.from(`${config.username}:${config.password}`).toString('base64');
     headers['Authorization'] = `Basic ${auth}`;
   }
+  // No Authorization header = anonymous access for public Confluence
   
   // Data Center REST API endpoint
   const url = `${config.baseUrl.replace(/\/$/, '')}/rest/api/content/${pageId}`;
