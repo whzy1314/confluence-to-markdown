@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: confluence-to-markdown
+  namespace: confluence-to-markdown
+  labels:
+    app.kubernetes.io/name: confluence-to-markdown
+spec:
+  type: ClusterIP
+  ports:
+    - port: 80
+      targetPort: http
+      protocol: TCP
+      name: http
+  selector:
+    app.kubernetes.io/name: confluence-to-markdown
