@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Confluence to Markdown</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: #f5f6f8;
+      color: #1a1a2e;
+      min-height: 100vh;
+    }
+
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 2rem 1.5rem;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 2rem;
+    }
+
+    header h1 {
+      font-size: 1.75rem;
+      font-weight: 700;
+      color: #1a1a2e;
+    }
+
+    header p {
+      color: #6b7280;
+      margin-top: 0.25rem;
+    }
+
+    .card {
+      background: #fff;
+      border-radius: 12px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .card h2 {
+      font-size: 1rem;
+      font-weight: 600;
+      margin-bottom: 1rem;
+      color: #374151;
+    }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+    }
+
+    .form-grid .full-width {
+      grid-column: 1 / -1;
+    }
+
+    label {
+      display: block;
+      font-size: 0.85rem;
+      font-weight: 500;
+      color: #4b5563;
+      margin-bottom: 0.25rem;
+    }
+
+    input, select {
+      width: 100%;
+      padding: 0.6rem 0.75rem;
+      border: 1px solid #d1d5db;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      transition: border-color 0.15s;
+      background: #fff;
+    }
+
+    input:focus, select:focus {
+      outline: none;
+      border-color: #3b82f6;
+      box-shadow: 0 0 0 3px rgba(59,130,246,0.1);
+    }
+
+    .btn-row {
+      display: flex;
+      gap: 0.75rem;
+      margin-top: 1rem;
+    }
+
+    button {
+      padding: 0.6rem 1.25rem;
+      border: none;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+
+    .btn-primary {
+      background: #3b82f6;
+      color: #fff;
+    }
+    .btn-primary:hover { background: #2563eb; }
+    .btn-primary:disabled { background: #93c5fd; cursor: not-allowed; }
+
+    .btn-secondary {
+      background: #e5e7eb;
+      color: #374151;
+    }
+    .btn-secondary:hover { background: #d1d5db; }
+
+    .options-row {
+      display: flex;
+      gap: 1.5rem;
+      margin-top: 0.75rem;
+      flex-wrap: wrap;
+    }
+
+    .checkbox-label {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      font-size: 0.85rem;
+      color: #4b5563;
+      cursor: pointer;
+    }
+
+    .checkbox-label input[type="checkbox"] {
+      width: auto;
+    }
+
+    .status {
+      padding: 0.75rem 1rem;
+      border-radius: 8px;
+      font-size: 0.85rem;
+      margin-top: 1rem;
+      display: none;
+    }
+
+    .status.error {
+      display: block;
+      background: #fef2f2;
+      color: #991b1b;
+      border: 1px solid #fecaca;
+    }
+
+    .status.success {
+      display: block;
+      background: #f0fdf4;
+      color: #166534;
+      border: 1px solid #bbf7d0;
+    }
+
+    .status.loading {
+      display: block;
+      background: #eff6ff;
+      color: #1e40af;
+      border: 1px solid #bfdbfe;
+    }
+
+    .result-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 0.75rem;
+    }
+
+    .result-header h2 { margin-bottom: 0; }
+
+    #output {
+      width: 100%;
+      min-height: 400px;
+      font-family: "SF Mono", "Fira Code", "Consolas", monospace;
+      font-size: 0.85rem;
+      line-height: 1.5;
+      border: 1px solid #d1d5db;
+      border-radius: 8px;
+      padding: 1rem;
+      background: #fafafa;
+      resize: vertical;
+    }
+
+    .warnings {
+      margin-top: 0.75rem;
+      font-size: 0.8rem;
+      color: #92400e;
+    }
+
+    .warnings li { margin-left: 1rem; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>Confluence to Markdown</h1>
+      <p>Convert Confluence pages to clean Markdown format</p>
+    </header>
+
+    <div class="card">
+      <h2>Connection</h2>
+      <div class="form-grid">
+        <div class="full-width">
+          <label for="baseUrl">Confluence Base URL</label>
+          <input type="url" id="baseUrl" placeholder="https://yoursite.atlassian.net">
+        </div>
+        <div>
+          <label for="username">Username / Email</label>
+          <input type="text" id="username" placeholder="you@example.com">
+        </div>
+        <div>
+          <label for="apiToken">API Token / Password</label>
+          <input type="password" id="apiToken" placeholder="Your API token">
+        </div>
+        <div>
+          <label for="confluenceType">Confluence Type</label>
+          <select id="confluenceType">
+            <option value="cloud">Cloud</option>
+            <option value="datacenter">Data Center / Server</option>
+          </select>
+        </div>
+        <div>
+          <label for="pageId">Page ID</label>
+          <input type="text" id="pageId" placeholder="12345678">
+        </div>
+      </div>
+      <div class="options-row">
+        <label class="checkbox-label">
+          <input type="checkbox" id="frontMatter" checked> YAML front matter
+        </label>
+        <label class="checkbox-label">
+          <input type="checkbox" id="includeChildren" checked> Include child pages
+        </label>
+        <label class="checkbox-label">
+          <input type="checkbox" id="convertMacros" checked> Convert macros
+        </label>
+      </div>
+      <div class="btn-row">
+        <button class="btn-primary" id="convertBtn">Convert</button>
+        <button class="btn-secondary" id="testBtn">Test Connection</button>
+      </div>
+      <div class="status" id="status"></div>
+    </div>
+
+    <div class="card" id="resultCard" style="display:none">
+      <div class="result-header">
+        <h2 id="resultTitle">Result</h2>
+        <div>
+          <button class="btn-secondary" id="copyBtn">Copy</button>
+          <button class="btn-secondary" id="downloadBtn" style="margin-left:0.5rem">Download</button>
+        </div>
+      </div>
+      <textarea id="output" readonly></textarea>
+      <ul class="warnings" id="warnings"></ul>
+    </div>
+  </div>
+
+  <script>
+    const $ = (s) => document.getElementById(s);
+
+    // Load defaults from server
+    fetch("/api/defaults")
+      .then((r) => r.json())
+      .then((d) => {
+        if (d.baseUrl) $("baseUrl").value = d.baseUrl;
+        if (d.username) $("username").value = d.username;
+        if (d.type) $("confluenceType").value = d.type;
+        if (d.hasToken) $("apiToken").placeholder = "Using server default";
+      })
+      .catch(() => {});
+
+    function setStatus(msg, type) {
+      const el = $("status");
+      el.textContent = msg;
+      el.className = "status " + type;
+    }
+
+    function clearStatus() {
+      $("status").className = "status";
+      $("status").textContent = "";
+    }
+
+    function getCredentials() {
+      return {
+        baseUrl: $("baseUrl").value.trim(),
+        username: $("username").value.trim(),
+        apiToken: $("apiToken").value.trim(),
+        type: $("confluenceType").value,
+      };
+    }
+
+    $("testBtn").addEventListener("click", async () => {
+      const creds = getCredentials();
+      if (!creds.baseUrl || !creds.username || !creds.apiToken) {
+        setStatus("Please fill in all credential fields.", "error");
+        return;
+      }
+      setStatus("Testing connection...", "loading");
+      try {
+        const res = await fetch("/api/test-connection", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(creds),
+        });
+        const data = await res.json();
+        if (data.success) {
+          setStatus("Connection successful!", "success");
+        } else {
+          setStatus(data.error || "Connection failed.", "error");
+        }
+      } catch (err) {
+        setStatus("Network error: " + err.message, "error");
+      }
+    });
+
+    $("convertBtn").addEventListener("click", async () => {
+      const creds = getCredentials();
+      const pageId = $("pageId").value.trim();
+
+      if (!creds.baseUrl || !creds.username || !creds.apiToken) {
+        setStatus("Please fill in all credential fields.", "error");
+        return;
+      }
+      if (!pageId) {
+        setStatus("Please enter a page ID.", "error");
+        return;
+      }
+
+      clearStatus();
+      setStatus("Converting page...", "loading");
+      $("convertBtn").disabled = true;
+
+      try {
+        const res = await fetch("/api/convert", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            ...creds,
+            pageId,
+            options: {
+              frontMatter: $("frontMatter").checked,
+              includeChildren: $("includeChildren").checked,
+              convertMacros: $("convertMacros").checked,
+            },
+          }),
+        });
+
+        const data = await res.json();
+
+        if (data.error) {
+          setStatus(data.error, "error");
+          return;
+        }
+
+        setStatus("Conversion complete!", "success");
+        $("resultCard").style.display = "block";
+        $("resultTitle").textContent = data.title || "Result";
+        $("output").value = data.markdown;
+
+        const warnList = $("warnings");
+        warnList.innerHTML = "";
+        if (data.warnings && data.warnings.length > 0) {
+          for (const w of data.warnings) {
+            const li = document.createElement("li");
+            li.textContent = w;
+            warnList.appendChild(li);
+          }
+        }
+      } catch (err) {
+        setStatus("Network error: " + err.message, "error");
+      } finally {
+        $("convertBtn").disabled = false;
+      }
+    });
+
+    $("copyBtn").addEventListener("click", () => {
+      const text = $("output").value;
+      navigator.clipboard.writeText(text).then(() => {
+        $("copyBtn").textContent = "Copied!";
+        setTimeout(() => ($("copyBtn").textContent = "Copy"), 1500);
+      });
+    });
+
+    $("downloadBtn").addEventListener("click", () => {
+      const text = $("output").value;
+      const title = $("resultTitle").textContent || "page";
+      const safeName = title.replace(/[^a-zA-Z0-9_\- ]/g, "").replace(/\s+/g, "-").toLowerCase();
+      const blob = new Blob([text], { type: "text/markdown" });
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = safeName + ".md";
+      a.click();
+      URL.revokeObjectURL(a.href);
+    });
+  </script>
+</body>
+</html>
