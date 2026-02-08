@@ -1,0 +1,43 @@
+{
+  "name": "confluence-to-markdown",
+  "version": "1.0.0",
+  "description": "Convert Confluence pages to clean Markdown format",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "bin": {
+    "confluence-to-markdown": "dist/cli.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/server/index.js",
+    "dev": "ts-node src/server/index.ts",
+    "cli": "ts-node src/cli.ts",
+    "test": "jest",
+    "test:coverage": "jest --coverage",
+    "lint": "tsc --noEmit"
+  },
+  "keywords": [
+    "confluence",
+    "markdown",
+    "converter",
+    "atlassian"
+  ],
+  "license": "MIT",
+  "dependencies": {
+    "axios": "^1.7.0",
+    "commander": "^12.1.0",
+    "dotenv": "^16.4.0",
+    "express": "^4.21.0",
+    "turndown": "^7.2.0"
+  },
+  "devDependencies": {
+    "@types/express": "^4.17.21",
+    "@types/jest": "^29.5.0",
+    "@types/node": "^20.14.0",
+    "@types/turndown": "^5.0.5",
+    "jest": "^29.7.0",
+    "ts-jest": "^29.2.0",
+    "ts-node": "^10.9.0",
+    "typescript": "^5.5.0"
+  }
+}
